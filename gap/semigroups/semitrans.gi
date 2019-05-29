@@ -1014,3 +1014,63 @@ function(digraph, colors)
                                     colors, colors)[1];
 
 end);
+
+InstallMethod(DigraphCore, "for a digraph",
+[IsDigraph],
+function(digraph)
+  local hook, S, n, homord, NVerts, T; 
+  if DigraphHasLoops(digraph) then
+    return Digraph([[1]]); # This is always the core for a digraph with loops
+  fi;
+
+  if HasGeneratorsOfEndomorphismMonoidAttr(digraph)
+      or SEMIGROUPS.DefaultOptionsRec.acting = false then
+    return Monoid(GeneratorsOfEndomorphismMonoidAttr(digraph),
+                  rec(small := true));
+  fi;
+
+  hook := function(S, f)
+    S[1] := ClosureMonoid(S[1], f);
+  end;
+
+  NVerts := DigraphNrVertices(digraph);
+  n := 1;
+  while n <= NVerts do
+    Print("\n Rank: ", n, " \n");
+    S := [AsMonoid(IsTransformationMonoid, AutomorphismGroup(digraph))];
+    # Note on the above line: should proably reset the S list each time we 
+    # use the homomorphism finder. Just seems like the right thing to do...
+
+    homord := HomomorphismDigraphsFinder(digraph, digraph, hook, S, n,
+                                      fail, false, DigraphVertices(digraph), [],
+                                      fail, fail)[1];
+
+    T := RepresentativeOfMinimalIdeal(homord);
+    Print("\n ", T, "\n");
+    if RankOfTransformation(T, [1 .. NVerts]) = n then
+      return InducedSubdigraph(digraph,
+                               ImageSetOfTransformation(T, NVerts));
+    fi;
+      n := n + 1;
+  od;
+end);
+
+# Below is a basic version, useful for creating tests
+InstallMethod(DigraphCoreForTests, "for a digraph",
+[IsDigraph],
+function(digraph)
+  local T, vert, verts, A, point;
+  T := RepresentativeOfMinimalIdeal(EndomorphismMonoid(digraph));
+  
+  verts := DigraphVertices(digraph);
+  A := [];
+  for vert in verts do
+    point := vert ^ T;
+    if not point in A then
+      Add(A, point);
+    fi;
+  od;
+
+  return InducedSubdigraph( digraph, A);
+
+end);

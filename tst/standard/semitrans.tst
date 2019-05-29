@@ -2776,6 +2776,22 @@ true
 gap> Transformation([2, 1, 4, 3, 6, 5, 6, 5, 7, 8]) in WW;
 false
 
+# DigraphCoreForTests
+gap> D := Digraph([[3, 6], [1], [4], [5, 7], [1], [2, 7], [4, 1]]);
+<immutable digraph with 7 vertices, 11 edges>
+gap> DigraphCoreForTests(D);
+<immutable digraph with 5 vertices, 7 edges>
+gap> D := Digraph([[2, 3], [1, 3], [1, 2, 4], [1]]);
+<immutable digraph with 4 vertices, 8 edges>
+gap> DigraphCoreForTests(D);
+<immutable digraph with 3 vertices, 6 edges>
+gap> DigraphHomomorphism(D, DigraphCoreForTests(D));
+Transformation( [ 1, 3, 2, 3 ] )
+gap> G := CompleteDigraph(10);
+<immutable digraph with 10 vertices, 90 edges>
+gap> DigraphCoreForTests(G);
+<immutable digraph with 10 vertices, 90 edges>
+
 # SEMIGROUPS_UnbindVariables
 gap> Unbind(B);
 gap> Unbind(BruteForceInverseCheck);
