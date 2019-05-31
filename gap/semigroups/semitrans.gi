@@ -1018,7 +1018,7 @@ end);
 InstallMethod(DigraphCore, "for a digraph",
 [IsDigraph],
 function(digraph)
-  local hook, S, n, homord, NVerts, T; 
+  local hook, S, n, homord, NVerts, T, tmp; 
   if DigraphHasLoops(digraph) then
     return Digraph([[1]]); # This is always the core for a digraph with loops
   fi;
@@ -1029,30 +1029,34 @@ function(digraph)
                   rec(small := true));
   fi;
 
-  hook := function(S, f)
-    S[1] := ClosureMonoid(S[1], f);
-  end;
+  #hook := function(S, f)
+  #  S[1] := ClosureMonoid(S[1], f);
+  #end;
 
   NVerts := DigraphNrVertices(digraph);
-  n := 1;
-  while n <= NVerts do
-    Print("\n Rank: ", n, " \n");
-    S := [AsMonoid(IsTransformationMonoid, AutomorphismGroup(digraph))];
+  n := 2;
+  #S := [AsMonoid(IsTransformationMonoid, AutomorphismGroup(digraph))];
+  while n < NVerts do
+   # Print("\n Rank: ", n, " \n");
     # Note on the above line: should proably reset the S list each time we 
     # use the homomorphism finder. Just seems like the right thing to do...
 
-    homord := HomomorphismDigraphsFinder(digraph, digraph, hook, S, n,
-                                      fail, false, DigraphVertices(digraph), [],
-                                      fail, fail)[1];
+    tmp := [];
+    HomomorphismDigraphsFinder(digraph, digraph, fail, tmp, 1,
+                                      n, false, DigraphVertices(digraph), [],
+                                      fail, fail);
 
-    T := RepresentativeOfMinimalIdeal(homord);
-    Print("\n ", T, "\n");
-    if RankOfTransformation(T, [1 .. NVerts]) = n then
-      return InducedSubdigraph(digraph,
-                               ImageSetOfTransformation(T, NVerts));
+    #T := RepresentativeOfMinimalIdeal(homord);
+    #Print("\n ", T, "\n");
+    if Length(tmp) > 0 then
+      return #InducedSubdigraph(digraph,
+                               ImageSetOfTransformation(tmp[1], NVerts);
     fi;
       n := n + 1;
   od;
+
+  #if no hom of rank up to NVerts - 1, then return image of identity (of rank NVerts)
+  return ImageSetOfTransformation(IdentityTransformation, NVerts);
 end);
 
 # Below is a basic version, useful for creating tests
