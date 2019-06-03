@@ -1018,9 +1018,9 @@ end);
 InstallMethod(DigraphCore, "for a digraph",
 [IsDigraph],
 function(digraph)
-  local hook, S, n, homord, NVerts, T, tmp; 
+  local n, NVerts, tmp;
   if DigraphHasLoops(digraph) then
-    return Digraph([[1]]); # This is always the core for a digraph with loops
+    return Digraph([[1]]);  # This is always the core for a digraph with loops
   fi;
 
   if HasGeneratorsOfEndomorphismMonoidAttr(digraph)
@@ -1029,33 +1029,21 @@ function(digraph)
                   rec(small := true));
   fi;
 
-  #hook := function(S, f)
-  #  S[1] := ClosureMonoid(S[1], f);
-  #end;
-
   NVerts := DigraphNrVertices(digraph);
   n := 2;
-  #S := [AsMonoid(IsTransformationMonoid, AutomorphismGroup(digraph))];
   while n < NVerts do
-   # Print("\n Rank: ", n, " \n");
-    # Note on the above line: should proably reset the S list each time we 
-    # use the homomorphism finder. Just seems like the right thing to do...
-
     tmp := [];
     HomomorphismDigraphsFinder(digraph, digraph, fail, tmp, 1,
                                       n, false, DigraphVertices(digraph), [],
                                       fail, fail);
-
-    #T := RepresentativeOfMinimalIdeal(homord);
-    #Print("\n ", T, "\n");
     if Length(tmp) > 0 then
-      return #InducedSubdigraph(digraph,
-                               ImageSetOfTransformation(tmp[1], NVerts);
+      return ImageSetOfTransformation(tmp[1], NVerts);
     fi;
       n := n + 1;
   od;
 
-  #if no hom of rank up to NVerts - 1, then return image of identity (of rank NVerts)
+  # if no homomorphism of rank up to NVerts - 1, then return image of
+  # the identity (of rank NVerts).
   return ImageSetOfTransformation(IdentityTransformation, NVerts);
 end);
 
@@ -1065,7 +1053,6 @@ InstallMethod(DigraphCoreForTests, "for a digraph",
 function(digraph)
   local T, vert, verts, A, point;
   T := RepresentativeOfMinimalIdeal(EndomorphismMonoid(digraph));
-  
   verts := DigraphVertices(digraph);
   A := [];
   for vert in verts do
@@ -1074,7 +1061,5 @@ function(digraph)
       Add(A, point);
     fi;
   od;
-
-  return InducedSubdigraph( digraph, A);
-
+  return InducedSubdigraph(digraph, A);
 end);
