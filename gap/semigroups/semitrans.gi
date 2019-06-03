@@ -1047,19 +1047,3 @@ function(digraph)
   return ImageSetOfTransformation(IdentityTransformation, NVerts);
 end);
 
-# Below is a basic version, useful for creating tests
-InstallMethod(DigraphCoreForTests, "for a digraph",
-[IsDigraph],
-function(digraph)
-  local T, vert, verts, A, point;
-  T := RepresentativeOfMinimalIdeal(EndomorphismMonoid(digraph));
-  verts := DigraphVertices(digraph);
-  A := [];
-  for vert in verts do
-    point := vert ^ T;
-    if not point in A then
-      Add(A, point);
-    fi;
-  od;
-  return InducedSubdigraph(digraph, A);
-end);
