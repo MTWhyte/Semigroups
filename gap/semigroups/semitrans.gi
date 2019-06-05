@@ -1041,6 +1041,7 @@ function(digraph)
                                [],                        # partial_map
                                fail,                      # colors1
                                fail);                     # colors2
+    Print("n: ", n, "\n");
     if Length(tmp) > 0 then
       NVerts  := DigraphNrVertices(digraph);
       image   := ImageSetOfTransformation(tmp[1], NVerts);
