@@ -1018,7 +1018,7 @@ end);
 InstallMethod(DigraphCore, "for a digraph",
 [IsDigraph],
 function(digraph)
-  local n, NVerts0, NVerts, tmp, image, relabel;
+  local n, NVerts0, NVerts, tmp, image;
   NVerts := DigraphNrVertices(digraph);
   if DigraphHasLoops(digraph) then
     return [1];  # This is always the core for a digraph with loops
@@ -1028,8 +1028,6 @@ function(digraph)
   fi;
   NVerts0 := NVerts;
   n       := NVerts - 1;
-  relabel := IdentityTransformation;
-  # relabels the vertices at the end, as labels mixed up by InducedSubdigraph
   while n > 1 do
     tmp := [];
     HomomorphismDigraphsFinder(digraph,                   # domain digraph
@@ -1043,17 +1041,14 @@ function(digraph)
                                [],                        # partial_map
                                fail,                      # colors1
                                fail);                     # colors2
-
     if Length(tmp) > 0 then
       NVerts  := DigraphNrVertices(digraph);
       image   := ImageSetOfTransformation(tmp[1], NVerts);
       digraph := InducedSubdigraph(digraph, image);
-      relabel := tmp[1] * relabel;  # check over order of mult.
     fi;
-
     n := n - 1;
   od;
 
-  return ImageSetOfTransformation(relabel, NVerts0);
+  return DigraphVertexLabels(digraph);
 end);
 
