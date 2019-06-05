@@ -1020,7 +1020,10 @@ InstallMethod(DigraphCore, "for a digraph",
 function(digraph)
   local n, NVerts, tmp;
   if DigraphHasLoops(digraph) then
-    return Digraph([[1]]);  # This is always the core for a digraph with loops
+    return [1];  # This is always the core for a digraph with loops
+  elif IsCompleteDigraph(digraph) then
+    NVerts := DigraphNrVertices(digraph);
+    return [1 .. NVerts];
   fi;
 
   if HasGeneratorsOfEndomorphismMonoidAttr(digraph)
