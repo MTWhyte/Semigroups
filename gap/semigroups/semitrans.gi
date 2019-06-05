@@ -1018,35 +1018,42 @@ end);
 InstallMethod(DigraphCore, "for a digraph",
 [IsDigraph],
 function(digraph)
-  local n, NVerts, tmp;
+  local n, NVerts0, NVerts, tmp, image, relabel;
+  NVerts := DigraphNrVertices(digraph);
   if DigraphHasLoops(digraph) then
     return [1];  # This is always the core for a digraph with loops
   elif IsCompleteDigraph(digraph) then
     NVerts := DigraphNrVertices(digraph);
     return [1 .. NVerts];
   fi;
-
-  if HasGeneratorsOfEndomorphismMonoidAttr(digraph)
-      or SEMIGROUPS.DefaultOptionsRec.acting = false then
-    return Monoid(GeneratorsOfEndomorphismMonoidAttr(digraph),
-                  rec(small := true));
-  fi;
-
-  NVerts := DigraphNrVertices(digraph);
-  n := 2;
-  while n < NVerts do
+  NVerts0 := NVerts;
+  n       := NVerts - 1;
+  relabel := IdentityTransformation;
+  # relabels the vertices at the end, as labels mixed up by InducedSubdigraph
+  while n > 1 do
     tmp := [];
-    HomomorphismDigraphsFinder(digraph, digraph, fail, tmp, 1,
-                                      n, false, DigraphVertices(digraph), [],
-                                      fail, fail);
+    HomomorphismDigraphsFinder(digraph,                   # domain digraph
+                               digraph,                   # range digraph
+                               fail,                      # hook
+                               tmp,                       # user_param
+                               1,                         # max_results
+                               n,                         # hint (i.e. rank)
+                               false,                     # injective
+                               DigraphVertices(digraph),  # image
+                               [],                        # partial_map
+                               fail,                      # colors1
+                               fail);                     # colors2
+
     if Length(tmp) > 0 then
-      return ImageSetOfTransformation(tmp[1], NVerts);
+      NVerts  := DigraphNrVertices(digraph);
+      image   := ImageSetOfTransformation(tmp[1], NVerts);
+      digraph := InducedSubdigraph(digraph, image);
+      relabel := tmp[1] * relabel;  # check over order of mult.
     fi;
-      n := n + 1;
+
+    n := n - 1;
   od;
 
-  # if no homomorphism of rank up to NVerts - 1, then return image of
-  # the identity (of rank NVerts).
-  return ImageSetOfTransformation(IdentityTransformation, NVerts);
+  return ImageSetOfTransformation(relabel, NVerts0);
 end);
 
