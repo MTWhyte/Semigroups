@@ -1018,7 +1018,8 @@ end);
 InstallMethod(DigraphCore, "for a digraph",
 [IsDigraph],
 function(digraph)
-  local n, NVerts0, NVerts, oddgirth, tmp, image, k;
+  local n, NVerts, oddgirth, tmp, image, topdownnext,
+  bottomupnext, topdown;
   NVerts := DigraphNrVertices(digraph);
   if DigraphHasLoops(digraph) then
     return [1];  # This is always the core for a digraph with loops
@@ -1026,9 +1027,10 @@ function(digraph)
     NVerts := DigraphNrVertices(digraph);
     return [1 .. NVerts];
   fi;
-  NVerts0   := NVerts;
-  n         := NVerts - 1;
-  k         := 0;
+  topdown      := true;
+  topdownnext  := NVerts - 1;
+  bottomupnext := 0;            # zero as var chooses next by maximum
+  n            := topdownnext;  # we start in topdown mode
 
   if DigraphOddGirth(digraph) <> infinity then
     oddgirth := DigraphOddGirth(digraph);
@@ -1038,11 +1040,9 @@ function(digraph)
   # Infinity is returned if there are no odd cycles in digraph, and
   # infinity is a useless lower bound.
 
-  # Could maybe change this NVerts0 to NVerts...
-
-  while (n >= oddgirth and n < NVerts) and k < NVerts0 - 1  do
-    Print("New loop \n");
-    Error();
+  while (n >= oddgirth and n < NVerts) and topdownnext >= bottomupnext do
+    # Print("New loop \n");
+    # Error();
     tmp := [];
     HomomorphismDigraphsFinder(digraph,                   # domain digraph
                                digraph,                   # range digraph
@@ -1056,9 +1056,8 @@ function(digraph)
                                fail,                      # colors1
                                fail);                     # colors2
     if Length(tmp) > 0 then
-      Print("Entered tmp > 0 section \n");
-      Error();
-      if k mod 2 = 0 then
+      # Print("Entered tmp > 0 section \n");
+      if topdown then
         image    := ImageSetOfTransformation(tmp[1], NVerts);
         # Apply transf to [1 .. current NVerts, not new NVerts]
         digraph  := InducedSubdigraph(digraph, image);
@@ -1069,25 +1068,25 @@ function(digraph)
           # bound for n gets updated.
         fi;
       else
-        Print("Returning smallest homomorphic subdigraph found \n");
-        Error();
+        # Print("Returning smallest homomorphic subdigraph found \n");
         image    := ImageSetOfTransformation(tmp[1], NVerts);
         digraph  := InducedSubdigraph(digraph, image);
         return DigraphVertexLabels(digraph);
       fi;
     fi;
-    if not k mod 2 = 0 then
-      n := NVerts - 1 - (k + 1) / 2;
+
+    if topdown then
+      bottomupnext := Maximum(bottomupnext + 1, oddgirth);
+      n            := bottomupnext;
+      topdown      := false;
     else
-      n := oddgirth + Int(k / 2);
+      topdownnext  := Minimum(topdownnext - 1, NVerts - 1);
+      n            := topdownnext;
+      topdown      := true;
     fi;
-    # even k is 'topdown' mode, which gets subgraphs and subgraphs, etc...
-    # odd k is 'updown', like in the branch digraphcore
-    k := k + 1;
   od;
 
-  Print("Broken out of loop \n");
-  Error();
+  # Print("Broken out of loop \n");
 
   return DigraphVertexLabels(digraph);
 end);
