@@ -1018,7 +1018,7 @@ end);
 InstallMethod(DigraphCore, "for a digraph",
 [IsDigraph],
 function(digraph)
-  local n, NVerts0, NVerts, tmp, image;
+  local n, NVerts0, NVerts, oddgirth, tmp, image, k;
   NVerts := DigraphNrVertices(digraph);
   if DigraphHasLoops(digraph) then
     return [1];  # This is always the core for a digraph with loops
@@ -1026,9 +1026,23 @@ function(digraph)
     NVerts := DigraphNrVertices(digraph);
     return [1 .. NVerts];
   fi;
-  NVerts0 := NVerts;
-  n       := NVerts - 1;
-  while n > 1 do
+  NVerts0   := NVerts;
+  n         := NVerts - 1;
+  k         := 0;
+
+  if DigraphOddGirth(digraph) <> infinity then
+    oddgirth := DigraphOddGirth(digraph);
+  else
+    oddgirth := 1;  # can't start at 2, because Digraph([[],[]]);
+  fi;
+  # Infinity is returned if there are no odd cycles in digraph, and
+  # infinity is a useless lower bound.
+
+  # Could maybe change this NVerts0 to NVerts...
+
+  while (n >= oddgirth and n < NVerts) and k < NVerts0 - 1  do
+    Print("New loop \n");
+    Error();
     tmp := [];
     HomomorphismDigraphsFinder(digraph,                   # domain digraph
                                digraph,                   # range digraph
@@ -1041,14 +1055,39 @@ function(digraph)
                                [],                        # partial_map
                                fail,                      # colors1
                                fail);                     # colors2
-    Print("n: ", n, "\n");
     if Length(tmp) > 0 then
-      NVerts  := DigraphNrVertices(digraph);
-      image   := ImageSetOfTransformation(tmp[1], NVerts);
-      digraph := InducedSubdigraph(digraph, image);
+      Print("Entered tmp > 0 section \n");
+      Error();
+      if k mod 2 = 0 then
+        image    := ImageSetOfTransformation(tmp[1], NVerts);
+        # Apply transf to [1 .. current NVerts, not new NVerts]
+        digraph  := InducedSubdigraph(digraph, image);
+        NVerts   := DigraphNrVertices(digraph);
+        if DigraphOddGirth(digraph) <> infinity then
+          oddgirth := DigraphOddGirth(digraph);
+          # if the new odd girth is finite, then the lower
+          # bound for n gets updated.
+        fi;
+      else
+        Print("Returning smallest homomorphic subdigraph found \n");
+        Error();
+        image    := ImageSetOfTransformation(tmp[1], NVerts);
+        digraph  := InducedSubdigraph(digraph, image);
+        return DigraphVertexLabels(digraph);
+      fi;
     fi;
-    n := n - 1;
+    if not k mod 2 = 0 then
+      n := NVerts - 1 - (k + 1) / 2;
+    else
+      n := oddgirth + Int(k / 2);
+    fi;
+    # even k is 'topdown' mode, which gets subgraphs and subgraphs, etc...
+    # odd k is 'updown', like in the branch digraphcore
+    k := k + 1;
   od;
+
+  Print("Broken out of loop \n");
+  Error();
 
   return DigraphVertexLabels(digraph);
 end);
