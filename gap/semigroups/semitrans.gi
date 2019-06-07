@@ -1018,30 +1018,42 @@ end);
 InstallMethod(DigraphCore, "for a digraph",
 [IsDigraph],
 function(digraph)
-  local n, NVerts, oddgirth, tmp, image, topdownnext, bottomupnext;
-  NVerts := DigraphNrVertices(digraph);
+  local n, NVerts, oddgirth, tmp, image, topdownnext, bottomupnext,
+  lowerbound, upperbound;
+  NVerts := DigraphNrVertices(digraph);  # needed for image sets
   if DigraphHasLoops(digraph) then
     return [1];  # This is always the core for a digraph with loops
   elif IsCompleteDigraph(digraph) then
     NVerts := DigraphNrVertices(digraph);
     return [1 .. NVerts];
   fi;
-  topdownnext  := NVerts - 1;
-  bottomupnext := 0;            # zero as var chooses next by maximum
+
+  lowerbound := function(digraph)  # lower bound on core size
+    local oddgirth;
+    oddgirth := DigraphOddGirth(digraph);  # stops repeat calc. for mutable
+    if oddgirth <> infinity then
+      return oddgirth;
+    elif HasChromaticNumber(digraph) then
+      return ChromaticNumber(digraph);
+    else
+      return CliqueNumber(digraph);
+    fi;
+  end;
+
+  upperbound := function(digraph)  # upper bound on core size
+    local NVerts;
+    NVerts := DigraphNrVertices(digraph);
+    return NVerts;
+  end;
+
+  topdownnext  := upperbound(digraph) - 1;
+  bottomupnext := 0;
   n            := topdownnext;  # we start in topdown mode
 
-  if DigraphOddGirth(digraph) <> infinity then
-    oddgirth := DigraphOddGirth(digraph);
-  else
-    oddgirth := 1;  # can't start at 2, because Digraph([[],[]]);
-  fi;
-  # Infinity is returned if there are no odd cycles in digraph, and
-  # infinity is a useless lower bound.
-
-  while (n >= oddgirth and n < NVerts) and topdownnext >= bottomupnext do
-    Print("New loop \n");
-    Print("Top down \n");
-    Error();
+  while topdownnext >= bottomupnext do
+   # Print("New loop \n");
+   # Print("Top down \n");
+   # Error();
 
     # top down
     tmp := [];
@@ -1061,22 +1073,17 @@ function(digraph)
       image    := ImageSetOfTransformation(tmp[1], NVerts);
       digraph  := InducedSubdigraph(digraph, image);
       NVerts   := DigraphNrVertices(digraph);
-      if DigraphOddGirth(digraph) <> infinity then
-        oddgirth := DigraphOddGirth(digraph);
-        # if the new odd girth is finite, then the lower
-        # bound for n gets updated.
-      fi;
     fi;
 
-    bottomupnext := Maximum(bottomupnext + 1, oddgirth);
+    bottomupnext := Maximum(bottomupnext + 1, lowerbound(digraph));
     if n = bottomupnext then
-      break;
+      break;  # stops topdown and bottomup overlapping
     fi;
     n := bottomupnext;
 
     # bottom up
-    Print("Bottom up \n");
-    Error();
+   # Print("Bottom up \n");
+   # Error();
     tmp := [];
     HomomorphismDigraphsFinder(digraph,                   # domain digraph
                                digraph,                   # range digraph
@@ -1095,11 +1102,9 @@ function(digraph)
       return DigraphVertexLabels(digraph);
     fi;
 
-    topdownnext  := Minimum(topdownnext - 1, NVerts - 1);
+    topdownnext  := Minimum(topdownnext - 1, upperbound(digraph) - 1);
     n            := topdownnext;
   od;
-
-  # Print("Broken out of loop \n");
 
   return DigraphVertexLabels(digraph);
 end);
