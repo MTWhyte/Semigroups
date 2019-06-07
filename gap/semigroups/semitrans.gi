@@ -1018,8 +1018,7 @@ end);
 InstallMethod(DigraphCore, "for a digraph",
 [IsDigraph],
 function(digraph)
-  local n, NVerts, oddgirth, tmp, image, topdownnext,
-  bottomupnext, topdown;
+  local n, NVerts, oddgirth, tmp, image, topdownnext, bottomupnext;
   NVerts := DigraphNrVertices(digraph);
   if DigraphHasLoops(digraph) then
     return [1];  # This is always the core for a digraph with loops
@@ -1027,7 +1026,6 @@ function(digraph)
     NVerts := DigraphNrVertices(digraph);
     return [1 .. NVerts];
   fi;
-  topdown      := true;
   topdownnext  := NVerts - 1;
   bottomupnext := 0;            # zero as var chooses next by maximum
   n            := topdownnext;  # we start in topdown mode
@@ -1041,8 +1039,11 @@ function(digraph)
   # infinity is a useless lower bound.
 
   while (n >= oddgirth and n < NVerts) and topdownnext >= bottomupnext do
-    # Print("New loop \n");
-    # Error();
+    Print("New loop \n");
+    Print("Top down \n");
+    Error();
+
+    # top down
     tmp := [];
     HomomorphismDigraphsFinder(digraph,                   # domain digraph
                                digraph,                   # range digraph
@@ -1057,33 +1058,45 @@ function(digraph)
                                fail);                     # colors2
     if Length(tmp) > 0 then
       # Print("Entered tmp > 0 section \n");
-      if topdown then
-        image    := ImageSetOfTransformation(tmp[1], NVerts);
-        # Apply transf to [1 .. current NVerts, not new NVerts]
-        digraph  := InducedSubdigraph(digraph, image);
-        NVerts   := DigraphNrVertices(digraph);
-        if DigraphOddGirth(digraph) <> infinity then
-          oddgirth := DigraphOddGirth(digraph);
-          # if the new odd girth is finite, then the lower
-          # bound for n gets updated.
-        fi;
-      else
-        # Print("Returning smallest homomorphic subdigraph found \n");
-        image    := ImageSetOfTransformation(tmp[1], NVerts);
-        digraph  := InducedSubdigraph(digraph, image);
-        return DigraphVertexLabels(digraph);
+      image    := ImageSetOfTransformation(tmp[1], NVerts);
+      digraph  := InducedSubdigraph(digraph, image);
+      NVerts   := DigraphNrVertices(digraph);
+      if DigraphOddGirth(digraph) <> infinity then
+        oddgirth := DigraphOddGirth(digraph);
+        # if the new odd girth is finite, then the lower
+        # bound for n gets updated.
       fi;
     fi;
 
-    if topdown then
-      bottomupnext := Maximum(bottomupnext + 1, oddgirth);
-      n            := bottomupnext;
-      topdown      := false;
-    else
-      topdownnext  := Minimum(topdownnext - 1, NVerts - 1);
-      n            := topdownnext;
-      topdown      := true;
+    bottomupnext := Maximum(bottomupnext + 1, oddgirth);
+    if n = bottomupnext then
+      break;
     fi;
+    n := bottomupnext;
+
+    # bottom up
+    Print("Bottom up \n");
+    Error();
+    tmp := [];
+    HomomorphismDigraphsFinder(digraph,                   # domain digraph
+                               digraph,                   # range digraph
+                               fail,                      # hook
+                               tmp,                       # user_param
+                               1,                         # max_results
+                               n,                         # hint (i.e. rank)
+                               false,                     # injective
+                               DigraphVertices(digraph),  # image
+                               [],                        # partial_map
+                               fail,                      # colors1
+                               fail);                     # colors2
+    if Length(tmp) > 0 then
+      image    := ImageSetOfTransformation(tmp[1], NVerts);
+      digraph  := InducedSubdigraph(digraph, image);
+      return DigraphVertexLabels(digraph);
+    fi;
+
+    topdownnext  := Minimum(topdownnext - 1, NVerts - 1);
+    n            := topdownnext;
   od;
 
   # Print("Broken out of loop \n");
