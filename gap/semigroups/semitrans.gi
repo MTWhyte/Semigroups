@@ -1046,16 +1046,43 @@ function(digraph)
     return NVerts;
   end;
 
-  topdownnext  := upperbound(digraph) - 1;
-  bottomupnext := 0;
-  n            := topdownnext;  # we start in topdown mode
+  topdownnext  := infinity;  # we choose value by minimum in loop
+  bottomupnext := lowerbound(digraph);
+  n            := bottomupnext;  # we start in bottomup mode
 
   while topdownnext >= bottomupnext do
-   # Print("New loop \n");
-   # Print("Top down \n");
-   # Error();
+    # bottom up
+    # Print("Bottom up \n");
+    # Error();
+    tmp := [];
+    HomomorphismDigraphsFinder(digraph,                   # domain digraph
+                               digraph,                   # range digraph
+                               fail,                      # hook
+                               tmp,                       # user_param
+                               1,                         # max_results
+                               n,                         # hint (i.e. rank)
+                               false,                     # injective
+                               DigraphVertices(digraph),  # image
+                               [],                        # partial_map
+                               fail,                      # colors1
+                               fail);                     # colors2
+    if Length(tmp) > 0 then
+      image    := ImageSetOfTransformation(tmp[1], NVerts);
+      digraph  := InducedSubdigraph(digraph, image);
+      return DigraphVertexLabels(digraph);
+    fi;
+
+    topdownnext  := Minimum(topdownnext - 1, upperbound(digraph) - 1);
+    if n = topdownnext then
+      break;
+    fi;
+    n := topdownnext;
 
     # top down
+    # Print("New loop \n");
+    # Print("Top down \n");
+    # Error();
+
     tmp := [];
     HomomorphismDigraphsFinder(digraph,                   # domain digraph
                                digraph,                   # range digraph
@@ -1076,34 +1103,8 @@ function(digraph)
     fi;
 
     bottomupnext := Maximum(bottomupnext + 1, lowerbound(digraph));
-    if n = bottomupnext then
-      break;  # stops topdown and bottomup overlapping
-    fi;
     n := bottomupnext;
 
-    # bottom up
-   # Print("Bottom up \n");
-   # Error();
-    tmp := [];
-    HomomorphismDigraphsFinder(digraph,                   # domain digraph
-                               digraph,                   # range digraph
-                               fail,                      # hook
-                               tmp,                       # user_param
-                               1,                         # max_results
-                               n,                         # hint (i.e. rank)
-                               false,                     # injective
-                               DigraphVertices(digraph),  # image
-                               [],                        # partial_map
-                               fail,                      # colors1
-                               fail);                     # colors2
-    if Length(tmp) > 0 then
-      image    := ImageSetOfTransformation(tmp[1], NVerts);
-      digraph  := InducedSubdigraph(digraph, image);
-      return DigraphVertexLabels(digraph);
-    fi;
-
-    topdownnext  := Minimum(topdownnext - 1, upperbound(digraph) - 1);
-    n            := topdownnext;
   od;
 
   return DigraphVertexLabels(digraph);
