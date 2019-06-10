@@ -1018,93 +1018,86 @@ end);
 InstallMethod(DigraphCore, "for a digraph",
 [IsDigraph],
 function(digraph)
-  local n, NVerts, oddgirth, tmp, image, topdownnext, bottomupnext,
-  lowerbound, upperbound;
-  NVerts := DigraphNrVertices(digraph);  # needed for image sets
-  if DigraphHasLoops(digraph) then
-    return [1];  # This is always the core for a digraph with loops
+  local N, oddgirth, tmp, image, topdown, bottomup, rep, lo, lo_var;
+  N := DigraphNrVertices(digraph);  # needed for image sets
+  if DigraphHasLoops(digraph) or IsEmptyDigraph(digraph) then
+    return [DigraphLoops(digraph)[1]];
   elif IsCompleteDigraph(digraph) then
-    NVerts := DigraphNrVertices(digraph);
-    return [1 .. NVerts];
+    return [1 .. N];
+  elif IsBipartiteDigraph(digraph) then
+    return DigraphEdges(digraph)[1];
+  elif HasGeneratorsOfEndomorphismMonoidAttr(digraph) then
+    rep := RepresentativeOfMinimalIdeal(EndomorphismMonoid(digraph));
+    return ImageSetOfTransformation(rep, N);
   fi;
 
-  lowerbound := function(digraph)  # lower bound on core size
+  lo := function(digraph)  # lower bound on core size
     local oddgirth;
     oddgirth := DigraphOddGirth(digraph);  # stops repeat calc. for mutable
     if oddgirth <> infinity then
       return oddgirth;
-    elif HasChromaticNumber(digraph) then
-      return ChromaticNumber(digraph);
-    else
-      return CliqueNumber(digraph);
     fi;
+    return 3;
   end;
 
-  upperbound := function(digraph)  # upper bound on core size
-    local NVerts;
-    NVerts := DigraphNrVertices(digraph);
-    return NVerts;
-  end;
+  topdown  := infinity;  # we choose value by minimum in loop
+  bottomup := 0;
 
-  topdownnext  := infinity;  # we choose value by minimum in loop
-  bottomupnext := lowerbound(digraph);
-  n            := bottomupnext;  # we start in bottomup mode
-
-  while topdownnext >= bottomupnext do
-    # bottom up
-    # Print("Bottom up \n");
-    # Error();
-    tmp := [];
+  tmp          := [];
+  while topdown >= bottomup do
+    bottomup := lo(digraph);
     HomomorphismDigraphsFinder(digraph,                   # domain digraph
                                digraph,                   # range digraph
                                fail,                      # hook
                                tmp,                       # user_param
                                1,                         # max_results
-                               n,                         # hint (i.e. rank)
+                               bottomup,                  # hint (i.e. rank)
                                false,                     # injective
                                DigraphVertices(digraph),  # image
                                [],                        # partial_map
                                fail,                      # colors1
                                fail);                     # colors2
-    if Length(tmp) > 0 then
-      image    := ImageSetOfTransformation(tmp[1], NVerts);
+    if Length(tmp) = 1 then
+      image    := ImageSetOfTransformation(tmp[1], N);
       digraph  := InducedSubdigraph(digraph, image);
       return DigraphVertexLabels(digraph);
+      # TODO: return DigraphVertexLabels(digraph){image};
     fi;
 
-    topdownnext  := Minimum(topdownnext - 1, upperbound(digraph) - 1);
-    if n = topdownnext then
+    if topdown - 1 < N - 1 then
+      topdown := topdown - 1;
+    else
+      topdown := N - 1;
+    fi;
+
+    if bottomup = topdown then
       break;
     fi;
-    n := topdownnext;
 
-    # top down
-    # Print("New loop \n");
-    # Print("Top down \n");
-    # Error();
-
-    tmp := [];
     HomomorphismDigraphsFinder(digraph,                   # domain digraph
                                digraph,                   # range digraph
                                fail,                      # hook
                                tmp,                       # user_param
                                1,                         # max_results
-                               n,                         # hint (i.e. rank)
+                               topdown,                   # hint (i.e. rank)
                                false,                     # injective
                                DigraphVertices(digraph),  # image
                                [],                        # partial_map
                                fail,                      # colors1
                                fail);                     # colors2
-    if Length(tmp) > 0 then
-      # Print("Entered tmp > 0 section \n");
-      image    := ImageSetOfTransformation(tmp[1], NVerts);
+    if Length(tmp) = 1 then
+      image    := ImageSetOfTransformation(tmp[1], N);
       digraph  := InducedSubdigraph(digraph, image);
-      NVerts   := DigraphNrVertices(digraph);
+      N   := DigraphNrVertices(digraph);
+      Unbind(tmp[1]);
     fi;
 
-    bottomupnext := Maximum(bottomupnext + 1, lowerbound(digraph));
-    n := bottomupnext;
-
+    lo_var := lo(digraph);
+    if bottomup + 1 > lo_var then
+      bottomup := bottomup + 1;
+    else
+      bottomup := lo_var;
+    fi;
   od;
 
   return DigraphVertexLabels(digraph);
