@@ -1041,11 +1041,10 @@ function(digraph)
   end;
 
   topdown  := infinity;  # we choose value by minimum in loop
-  bottomup := 0;
+  bottomup := lo(digraph);
 
   tmp          := [];
   while topdown >= bottomup do
-    bottomup := lo(digraph);
     HomomorphismDigraphsFinder(digraph,                   # domain digraph
                                digraph,                   # range digraph
                                fail,                      # hook
