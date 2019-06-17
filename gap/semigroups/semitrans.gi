@@ -1020,8 +1020,10 @@ InstallMethod(DigraphCore, "for a digraph",
 function(digraph)
   local N, oddgirth, tmp, image, topdown, bottomup, rep, lo, lo_var;
   N := DigraphNrVertices(digraph);  # needed for image sets
-  if DigraphHasLoops(digraph) or IsEmptyDigraph(digraph) then
+  if DigraphHasLoops(digraph) then
     return [DigraphLoops(digraph)[1]];
+  elif IsEmptyDigraph(digraph) then
+    return [1];
   elif IsCompleteDigraph(digraph) then
     return [1 .. N];
   elif IsBipartiteDigraph(digraph) then
@@ -1042,7 +1044,6 @@ function(digraph)
 
   topdown  := infinity;  # we choose value by minimum in loop
   bottomup := lo(digraph);
-
   tmp          := [];
   while topdown >= bottomup do
     HomomorphismDigraphsFinder(digraph,                   # domain digraph
@@ -1072,7 +1073,6 @@ function(digraph)
     if bottomup = topdown then
       break;
     fi;
-
     HomomorphismDigraphsFinder(digraph,                   # domain digraph
                                digraph,                   # range digraph
                                fail,                      # hook
