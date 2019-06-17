@@ -1018,7 +1018,8 @@ end);
 InstallMethod(DigraphCore, "for a digraph",
 [IsDigraph],
 function(digraph)
-  local N, oddgirth, tmp, image, topdown, bottomup, rep, lo, lo_var;
+  local N, oddgirth, tmp, image, topdown, bottomup, rep, lo, lo_var, skiptd, Dprev,
+  hi, hi_var;
   N := DigraphNrVertices(digraph);  # needed for image sets
   if DigraphHasLoops(digraph) then
     return [DigraphLoops(digraph)[1]];
@@ -1042,10 +1043,19 @@ function(digraph)
     return 3;
   end;
 
+  if DigraphNrEdges(digraph) > infinity then
+    skiptd := true;
+  else
+    skiptd := false;
+  fi;
   topdown  := infinity;  # we choose value by minimum in loop
   bottomup := lo(digraph);
   tmp          := [];
+  #hi_var := hi(digraph);
+  lo_var := lo(digraph);
+
   while topdown >= bottomup do
+   # Print("topdown: ", topdown, " | bottomup: ", bottomup, "\n");
     HomomorphismDigraphsFinder(digraph,                   # domain digraph
                                digraph,                   # range digraph
                                fail,                      # hook
@@ -1064,6 +1074,8 @@ function(digraph)
       # TODO: return DigraphVertexLabels(digraph){image};
     fi;
 
+    if not skiptd then
+
     if topdown - 1 < N - 1 then
       topdown := topdown - 1;
     else
@@ -1073,7 +1085,8 @@ function(digraph)
     if bottomup = topdown then
       break;
     fi;
-    HomomorphismDigraphsFinder(digraph,                   # domain digraph
+
+      HomomorphismDigraphsFinder(digraph,                   # domain digraph
                                digraph,                   # range digraph
                                fail,                      # hook
                                tmp,                       # user_param
@@ -1086,12 +1099,22 @@ function(digraph)
                                fail);                     # colors2
     if Length(tmp) = 1 then
       image    := ImageSetOfTransformation(tmp[1], N);
+      Dprev    := digraph;
       digraph  := InducedSubdigraph(digraph, image);
       N   := DigraphNrVertices(digraph);
       Unbind(tmp[1]);
+      if DigraphNrEdges(Dprev) - DigraphNrEdges(digraph) > 1 
+        or DigraphNrVertices(digraph) - N > 1 then
+        # if the number of edges and vertices only changed by 1, we removed a degree 1 
+        # vertex, which can't change the odd girth.
+        # TODO: think of a better condition under which the odd girth doesn't change
+        lo_var := lo(digraph);
+      fi;
+      #hi_var := hi(digraph);
     fi;
 
-    lo_var := lo(digraph);
+    fi;
+
     if bottomup + 1 > lo_var then
       bottomup := bottomup + 1;
     else
