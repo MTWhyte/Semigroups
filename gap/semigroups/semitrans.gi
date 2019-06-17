@@ -1042,6 +1042,25 @@ function(digraph)
     fi;
     return 3;
   end;
+ 
+  hi := function(digraph)
+    local DegOne, N, In, Out;
+    N   := DigraphNrVertices(digraph);
+    if N < 3 or not (IsSymmetricDigraph(digraph) and
+      IsConnectedDigraph(digraph)) then
+      return N - 1;  # the largest the core can be, unless digraph is the core
+    fi;
+    # In a symmetric connected digraph with 3 or more verts, the
+    # core won't contain a vertex of degree 1
+    In     := Filtered([1 .. N], x -> InDegrees(digraph)[x] = 1);
+    Out    := Filtered([1 .. N], x -> OutDegrees(digraph)[x] = 1);
+    DegOne := Intersection(In, Out);
+    if Length(DegOne) > 0 then
+      return N - Length(DegOne);
+    else
+      return N - 1;
+    fi;
+  end;
 
   if DigraphNrEdges(digraph) > infinity then
     skiptd := true;
@@ -1051,7 +1070,7 @@ function(digraph)
   topdown  := infinity;  # we choose value by minimum in loop
   bottomup := lo(digraph);
   tmp          := [];
-  #hi_var := hi(digraph);
+  hi_var := hi(digraph);
   lo_var := lo(digraph);
 
   while topdown >= bottomup do
@@ -1076,10 +1095,10 @@ function(digraph)
 
     if not skiptd then
 
-    if topdown - 1 < N - 1 then
+    if topdown - 1 < hi_var then
       topdown := topdown - 1;
     else
-      topdown := N - 1;
+      topdown := hi_var;
     fi;
 
     if bottomup = topdown then
@@ -1110,7 +1129,7 @@ function(digraph)
         # TODO: think of a better condition under which the odd girth doesn't change
         lo_var := lo(digraph);
       fi;
-      #hi_var := hi(digraph);
+      hi_var := hi(digraph);
     fi;
 
     fi;
