@@ -1019,7 +1019,7 @@ end);
 InstallMethod(DigraphCore, "for a digraph",
 [IsDigraph],
 function(digraph)
-  local N, oddgirth, hom, image, topdown, bottomup, rep, lo, lo_var, Vprev, EPrev;
+  local N, oddgirth, hom, image, topdown, bottomup, rep, lo, lo_var;
   N := DigraphNrVertices(digraph);  # needed for image sets
   if DigraphHasLoops(digraph) then
     return [DigraphLoops(digraph)[1]];
@@ -1043,7 +1043,7 @@ function(digraph)
     return 3;
   end;
 
-  digraph  := DigraphMutableCopy(digraph);
+  #digraph  := DigraphMutableCopy(digraph);
   topdown  := infinity;  # we choose value by minimum in loop
   bottomup := lo(digraph);
   hom      := [];
@@ -1064,7 +1064,8 @@ function(digraph)
                                fail);                     # colors2
     if Length(hom) = 1 then
       image    := ImageSetOfTransformation(hom[1], N);
-      DigraphRemoveVertices(digraph, Filtered([1 .. N], x -> not x in image));
+      #DigraphRemoveVertices(digraph, Filtered([1 .. N], x -> not x in image));
+      digraph  := InducedSubdigraph(digraph, image);
       return DigraphVertexLabels(digraph);
     fi;
 
@@ -1091,7 +1092,8 @@ function(digraph)
                                fail);                     # colors2
     if Length(hom) = 1 then
       image    := ImageSetOfTransformation(hom[1], N);
-      DigraphRemoveVertices(digraph, Filtered([1 .. N], x -> not x in image));
+      #DigraphRemoveVertices(digraph, Filtered([1 .. N], x -> not x in image));
+      digraph  := InducedSubdigraph(digraph, image);
       N   := DigraphNrVertices(digraph);
       Unbind(hom[1]);
       # TODO: think of a condition under which the odd girth is same
