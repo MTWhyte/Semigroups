@@ -1110,3 +1110,95 @@ function(digraph)
   return DigraphVertexLabels(digraph);
 end);
 
+InstallMethod(DigraphCoreMutable, "for a digraph",
+[IsDigraph],
+function(digraph)
+  local N, oddgirth, hom, image, topdown, bottomup, rep, lo, lo_var, Vprev, EPrev;
+  N := DigraphNrVertices(digraph);  # needed for image sets
+  if DigraphHasLoops(digraph) then
+    return [DigraphLoops(digraph)[1]];
+  elif IsEmptyDigraph(digraph) then
+    return [1];
+  elif IsCompleteDigraph(digraph) then
+    return [1 .. N];
+  elif IsBipartiteDigraph(digraph) then
+    return DigraphEdges(digraph)[1];
+  elif HasGeneratorsOfEndomorphismMonoidAttr(digraph) then
+    rep := RepresentativeOfMinimalIdeal(EndomorphismMonoid(digraph));
+    return ImageSetOfTransformation(rep, N);
+  fi;
+
+  lo := function(digraph)  # lower bound on core size
+    local oddgirth;
+    oddgirth := DigraphOddGirth(digraph);  # stops repeat calc. for mutable
+    if oddgirth <> infinity then
+      return oddgirth;
+    fi;
+    return 3;
+  end;
+
+  digraph  := DigraphMutableCopy(digraph);
+  topdown  := infinity;  # we choose value by minimum in loop
+  bottomup := lo(digraph);
+  hom      := [];
+  lo_var := lo(digraph);
+
+  while topdown > bottomup do
+    # Print("topdown: ", topdown, " | bottomup: ", bottomup, "\n");
+    HomomorphismDigraphsFinder(digraph,                   # domain digraph
+                               digraph,                   # range digraph
+                               fail,                      # hook
+                               hom,                       # user_param
+                               1,                         # max_results
+                               bottomup,                  # hint (i.e. rank)
+                               false,                     # injective
+                               DigraphVertices(digraph),  # image
+                               [],                        # partial_map
+                               fail,                      # colors1
+                               fail);                     # colors2
+    if Length(hom) = 1 then
+      image    := ImageSetOfTransformation(hom[1], N);
+      DigraphRemoveVertices(digraph, Filtered([1 .. N], x -> not x in image));
+      return DigraphVertexLabels(digraph);
+    fi;
+
+    if topdown - 1 < N - 1 then
+      topdown := topdown - 1;
+    else
+      topdown := N - 1;
+    fi;
+
+    if bottomup = topdown then
+      break;
+    fi;
+
+    HomomorphismDigraphsFinder(digraph,                   # domain digraph
+                               digraph,                   # range digraph
+                               fail,                      # hook
+                               hom,                       # user_param
+                               1,                         # max_results
+                               topdown,                   # hint (i.e. rank)
+                               false,                     # injective
+                               DigraphVertices(digraph),  # image
+                               [],                        # partial_map
+                               fail,                      # colors1
+                               fail);                     # colors2
+    if Length(hom) = 1 then
+      image    := ImageSetOfTransformation(hom[1], N);
+      DigraphRemoveVertices(digraph, Filtered([1 .. N], x -> not x in image));
+      N   := DigraphNrVertices(digraph);
+      Unbind(hom[1]);
+      # TODO: think of a condition under which the odd girth is same
+      lo_var := lo(digraph);
+    fi;
+
+    if bottomup + 1 > lo_var then
+      bottomup := bottomup + 1;
+    else
+      bottomup := lo_var;
+    fi;
+  od;
+
+  return DigraphVertexLabels(digraph);
+end);
+

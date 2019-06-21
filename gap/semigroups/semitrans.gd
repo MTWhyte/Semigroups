@@ -39,6 +39,7 @@ DeclareAttribute("EndomorphismMonoid", IsDigraph);
 DeclareOperation("EndomorphismMonoid", [IsDigraph, IsHomogeneousList]);
 
 DeclareAttribute("DigraphCore", IsDigraph);
+DeclareAttribute("DigraphCoreMutable", IsDigraph);
 
 DeclareOperation("WreathProduct",
                  [IsMultiplicativeElementCollection,
